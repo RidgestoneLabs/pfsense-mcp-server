@@ -33,7 +33,8 @@ async def search_virtual_ips(
     Args:
         search_term: General search across subnet/description (client-side filter)
         type_filter: Filter by VIP mode (ipalias, carp, proxyarp, other)
-        interface: Filter by interface (wan, lan, opt1, etc.)
+        interface: Filter by interface description (MGMT, Servers, etc.), matching what
+            create_virtual_ip takes
         page: Page number for pagination
         page_size: Number of results per page
         sort_by: Field to sort by (subnet, mode, interface, descr, etc.)
@@ -109,7 +110,10 @@ async def create_virtual_ip(
 
     Args:
         mode: VIP mode (ipalias, carp, proxyarp, other)
-        interface: Interface to assign the VIP to (wan, lan, opt1, etc.)
+        interface: Interface to assign the VIP to, given as its description (MGMT,
+            Servers, CCC_Guest), not its internal name. Passing 'opt16' returns a 400
+            listing the valid choices. Note this is the opposite of /interface, which
+            keys by 'opt16' and rejects the description.
         subnet: IP address for the virtual IP
         subnet_bits: Subnet mask bits (e.g., 32 for single host, 24 for /24)
         type: Address type (single, network)
@@ -184,7 +188,8 @@ async def update_virtual_ip(
     Args:
         vip_id: Virtual IP ID (from search_virtual_ips)
         mode: VIP mode (ipalias, carp, proxyarp, other)
-        interface: Interface to assign the VIP to
+        interface: Interface to assign the VIP to, given as its description (MGMT,
+            Servers, CCC_Guest), not its internal name. See create_virtual_ip.
         subnet: IP address for the virtual IP
         subnet_bits: Subnet mask bits
         type: Address type (single, network)

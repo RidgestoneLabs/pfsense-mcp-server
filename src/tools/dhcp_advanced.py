@@ -112,6 +112,7 @@ async def create_dhcp_address_pool(
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True))
 @rate_limited
 async def update_dhcp_address_pool(
+    parent_id: str,
     pool_id: int,
     range_from: Optional[str] = None,
     range_to: Optional[str] = None,
@@ -121,6 +122,9 @@ async def update_dhcp_address_pool(
     """Update an existing DHCP address pool by ID
 
     Args:
+        parent_id: Parent interface (e.g., 'lan', 'opt1'). Required: address pools are
+            nested under an interface's DHCP server, and the endpoint returns a 500
+            (MODEL_CANNOT_GET_CONFIG_PATH_WITHOUT_PARENT_MODEL) without it.
         pool_id: Address pool ID (from search_dhcp_address_pools)
         range_from: Start IP address of the pool range
         range_to: End IP address of the pool range
@@ -141,6 +145,9 @@ async def update_dhcp_address_pool(
         if not updates:
             return {"success": False, "error": "No fields to update - provide at least one field"}
 
+        fields_updated = list(updates.keys())
+        updates["parent_id"] = parent_id
+
         control = ControlParameters(apply=apply_immediately)
         result = await client.crud_update(
             "/services/dhcp_server/address_pool", pool_id, updates, control
@@ -148,9 +155,10 @@ async def update_dhcp_address_pool(
 
         return {
             "success": True,
-            "message": f"DHCP address pool {pool_id} updated",
+            "message": f"DHCP address pool {pool_id} updated on {parent_id}",
+            "parent_id": parent_id,
             "pool_id": pool_id,
-            "fields_updated": list(updates.keys()),
+            "fields_updated": fields_updated,
             "applied": apply_immediately,
             "result": result.get("data", result),
             "links": client.extract_links(result),
@@ -164,6 +172,7 @@ async def update_dhcp_address_pool(
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True))
 @guarded
 async def delete_dhcp_address_pool(
+    parent_id: str,
     pool_id: int,
     apply_immediately: bool = True,
     confirm: bool = False,
@@ -172,6 +181,9 @@ async def delete_dhcp_address_pool(
     """Delete a DHCP address pool by ID. WARNING: This is irreversible.
 
     Args:
+        parent_id: Parent interface (e.g., 'lan', 'opt1'). Required: address pools are
+            nested under an interface's DHCP server, and the endpoint returns a 500
+            (MODEL_CANNOT_GET_CONFIG_PATH_WITHOUT_PARENT_MODEL) without it.
         pool_id: Address pool ID (from search_dhcp_address_pools)
         apply_immediately: Whether to apply changes immediately
         confirm: Must be set to True to execute. Safety gate for destructive operations.
@@ -181,12 +193,16 @@ async def delete_dhcp_address_pool(
     try:
         control = ControlParameters(apply=apply_immediately)
         result = await client.crud_delete(
-            "/services/dhcp_server/address_pool", pool_id, control
+            "/services/dhcp_server/address_pool",
+            pool_id,
+            control,
+            extra_data={"parent_id": parent_id},
         )
 
         return {
             "success": True,
-            "message": f"DHCP address pool {pool_id} deleted",
+            "message": f"DHCP address pool {pool_id} deleted from {parent_id}",
+            "parent_id": parent_id,
             "pool_id": pool_id,
             "applied": apply_immediately,
             "result": result.get("data", result),
@@ -300,6 +316,7 @@ async def create_dhcp_custom_option(
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True))
 @rate_limited
 async def update_dhcp_custom_option(
+    parent_id: str,
     option_id: int,
     number: Optional[int] = None,
     type: Optional[str] = None,
@@ -309,6 +326,9 @@ async def update_dhcp_custom_option(
     """Update an existing DHCP custom option by ID
 
     Args:
+        parent_id: Parent interface (e.g., 'lan', 'opt1'). Required: custom options are
+            nested under an interface's DHCP server, and the endpoint returns a 500
+            (MODEL_CANNOT_GET_CONFIG_PATH_WITHOUT_PARENT_MODEL) without it.
         option_id: Custom option ID (from search_dhcp_custom_options)
         number: DHCP option number
         type: Option type
@@ -329,6 +349,9 @@ async def update_dhcp_custom_option(
         if not updates:
             return {"success": False, "error": "No fields to update - provide at least one field"}
 
+        fields_updated = list(updates.keys())
+        updates["parent_id"] = parent_id
+
         control = ControlParameters(apply=apply_immediately)
         result = await client.crud_update(
             "/services/dhcp_server/custom_option", option_id, updates, control
@@ -336,9 +359,10 @@ async def update_dhcp_custom_option(
 
         return {
             "success": True,
-            "message": f"DHCP custom option {option_id} updated",
+            "message": f"DHCP custom option {option_id} updated on {parent_id}",
+            "parent_id": parent_id,
             "option_id": option_id,
-            "fields_updated": list(updates.keys()),
+            "fields_updated": fields_updated,
             "applied": apply_immediately,
             "result": result.get("data", result),
             "links": client.extract_links(result),
@@ -352,6 +376,7 @@ async def update_dhcp_custom_option(
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True))
 @guarded
 async def delete_dhcp_custom_option(
+    parent_id: str,
     option_id: int,
     apply_immediately: bool = True,
     confirm: bool = False,
@@ -360,6 +385,9 @@ async def delete_dhcp_custom_option(
     """Delete a DHCP custom option by ID. WARNING: This is irreversible.
 
     Args:
+        parent_id: Parent interface (e.g., 'lan', 'opt1'). Required: custom options are
+            nested under an interface's DHCP server, and the endpoint returns a 500
+            (MODEL_CANNOT_GET_CONFIG_PATH_WITHOUT_PARENT_MODEL) without it.
         option_id: Custom option ID (from search_dhcp_custom_options)
         apply_immediately: Whether to apply changes immediately
         confirm: Must be set to True to execute. Safety gate for destructive operations.
@@ -369,12 +397,16 @@ async def delete_dhcp_custom_option(
     try:
         control = ControlParameters(apply=apply_immediately)
         result = await client.crud_delete(
-            "/services/dhcp_server/custom_option", option_id, control
+            "/services/dhcp_server/custom_option",
+            option_id,
+            control,
+            extra_data={"parent_id": parent_id},
         )
 
         return {
             "success": True,
-            "message": f"DHCP custom option {option_id} deleted",
+            "message": f"DHCP custom option {option_id} deleted from {parent_id}",
+            "parent_id": parent_id,
             "option_id": option_id,
             "applied": apply_immediately,
             "result": result.get("data", result),
