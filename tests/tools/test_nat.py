@@ -184,3 +184,24 @@ class TestUpdateNatPortForward:
         assert result["success"] is False
         assert "Invalid destination_port" in result["error"]
         mock_make_request.assert_not_called()
+
+    async def test_clears_associated_rule_id(self, mock_client, mock_make_request):
+        """An empty string is a real update, not a skipped field."""
+        mock_make_request.return_value = {"data": {"id": 0}}
+        result = await _update_nat_port_forward(port_forward_id=0, associated_rule_id="")
+        assert result["success"] is True
+        assert "associated_rule_id" in result["fields_updated"]
+        data = mock_make_request.call_args.kwargs.get("data") or mock_make_request.call_args[1].get("data")
+        assert data["associated_rule_id"] == ""
+
+    async def test_sets_associated_rule_tracker_id(self, mock_client, mock_make_request):
+        mock_make_request.return_value = {"data": {"id": 0}}
+        await _update_nat_port_forward(port_forward_id=0, associated_rule_id="1699999999")
+        data = mock_make_request.call_args.kwargs.get("data") or mock_make_request.call_args[1].get("data")
+        assert data["associated_rule_id"] == "1699999999"
+
+    async def test_rejects_invalid_associated_rule_id(self, mock_client, mock_make_request):
+        result = await _update_nat_port_forward(port_forward_id=0, associated_rule_id="none")
+        assert result["success"] is False
+        assert "Invalid associated_rule_id" in result["error"]
+        mock_make_request.assert_not_called()
