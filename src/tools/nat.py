@@ -229,6 +229,7 @@ async def update_nat_port_forward(
     description: Optional[str] = None,
     disabled: Optional[bool] = None,
     nat_reflection: Optional[str] = None,
+    associated_rule_id: Optional[str] = None,
     apply_immediately: bool = True
 ) -> Dict:
     """Update an existing NAT port forwarding rule by ID
@@ -245,6 +246,9 @@ async def update_nat_port_forward(
         description: Rule description
         disabled: Whether the rule is disabled
         nat_reflection: NAT reflection mode (enable, disable, purenat)
+        associated_rule_id: Firewall rule link. "" clears the link, "pass" makes the NAT rule pass
+            traffic without a filter rule, "new" creates a fresh associated rule, or pass an existing
+            rule's tracker ID. Use "" when the linked rule no longer exists and the rule fails to save.
         apply_immediately: Whether to apply changes immediately
     """
     client = get_api_client()
@@ -260,6 +264,10 @@ async def update_nat_port_forward(
         if nat_reflection is not None and nat_reflection not in ("enable", "disable", "purenat"):
             return {"success": False, "error": f"Invalid nat_reflection '{nat_reflection}'. Must be: enable, disable, purenat"}
 
+        # The API models this as a string, so clearing the link means sending "", not null.
+        if associated_rule_id is not None and associated_rule_id not in ("", "pass", "new") and not associated_rule_id.isdigit():
+            return {"success": False, "error": f"Invalid associated_rule_id '{associated_rule_id}'. Must be \"\", \"pass\", \"new\", or a numeric rule tracker ID"}
+
         field_map = {
             "interface": "interface",
             "protocol": "protocol",
@@ -271,6 +279,7 @@ async def update_nat_port_forward(
             "description": "descr",
             "disabled": "disabled",
             "nat_reflection": "natreflection",
+            "associated_rule_id": "associated_rule_id",
         }
 
         params = {
@@ -284,6 +293,7 @@ async def update_nat_port_forward(
             "description": description,
             "disabled": disabled,
             "nat_reflection": nat_reflection,
+            "associated_rule_id": associated_rule_id,
         }
 
         updates = {}
